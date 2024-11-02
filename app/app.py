@@ -78,20 +78,28 @@ class Sesion_Manager:
             print("Response:", response.text)
 
 
-
-def write_demands_to_file(data):
+def write_demands_to_file(data, i=1):
     lines = []
     for sub_dict in data['demand']:
         line = ""
         for key, value in sub_dict.items():
-            if key == 'postDay':
-                continue
+            # if key == 'postDay':
+            #     continue
             line += str(value) + " "
         lines.append(line.strip())
 
-    with open('output.txt', 'w') as f:
+    with open('result_demands/demand' + str(i) + '.txt', 'w') as f:
         f.write("\n".join(lines))
 
+
+def calculate_movement(sm, day):
+    movements = [
+        {
+            "connectionId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            "amount": 0
+        }
+    ]
+    return movements
 
 def main():
     sm = Sesion_Manager()
@@ -99,18 +107,13 @@ def main():
     print(session_id)
 
     if session_id:
-        # Example movement
-        movements = [
-            {
-                "connectionId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-                "amount": 0
-            }
-        ]
-        data_json = sm.play_round(0, movements)
-        write_demands_to_file(data_json)
+        for i in range(0, 5):
+            movements = calculate_movement(sm, i)
+
+            data_json = sm.play_round(i, movements)
+            write_demands_to_file(data_json, i)
 
     sm.end_session()
-
 
 
 if __name__ == "__main__":
