@@ -1,6 +1,8 @@
 import json
-
+import os
+import threading
 import requests
+import time
 
 class Sesion_Manager:
     def __init__(self):
@@ -93,6 +95,8 @@ def write_demands_to_file(data, i=1):
 
 
 def calculate_movement(sm, day):
+    if day == 0:
+        return []
     movements = [
         {
             "connectionId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
@@ -100,6 +104,12 @@ def calculate_movement(sm, day):
         }
     ]
     return movements
+
+def main_cpp():
+    os.startfile('maincpp.exe')
+
+
+
 
 def main():
     sm = Sesion_Manager()
@@ -117,4 +127,8 @@ def main():
 
 
 if __name__ == "__main__":
+
+    thread = threading.Thread(target = main_cpp)
+    thread.start()
     main()
+    thread.join()
