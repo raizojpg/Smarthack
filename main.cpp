@@ -207,22 +207,19 @@ void read_connections() {
 		tell_me_index[id] = e->counter - 1;
 		tell_me_type[id] = e->connection_type;
 		edges.push_back(e);
-		if (connection_type == "TRUCK") {
-			trucks.push_back(e); // index doesn t work for this
-			if (tell_me_type[from_id] == "STORAGE_TANK") {
-				int id1 = tell_me_index[from_id];
-				int id2 = tell_me_index[to_id];
-				ct[tell_me_index[from_id]].push_back({ tell_me_index[to_id], tell_me_index[id] });
-				tc[tell_me_index[to_id]].push_back({ tell_me_index[from_id], tell_me_index[id] });
-			}
+		if (tell_me_type[from_id] == "STORAGE_TANK" && tell_me_type[to_id] == "STORAGE_TANK") {
+			tt_out[tell_me_index[from_id]].push_back({ tell_me_index[to_id], tell_me_index[id] });
+			tt_in[tell_me_index[to_id]].push_back({ tell_me_index[from_id], tell_me_index[id] });
 		}
-		else if (connection_type == "PIPELINE") {
-			pipelines.push_back(e); // index doesn t work for this
-			if (tell_me_type[from_id] == "RAFINERY") {
-				rt[tell_me_index[from_id]].push_back({ tell_me_index[to_id], tell_me_index[id] });
-				tr[tell_me_index[to_id]].push_back({ tell_me_index[from_id], tell_me_index[id] });
-			}
+		else if (tell_me_type[from_id] == "STORAGE_TANK") {
+			ct[tell_me_index[from_id]].push_back({ tell_me_index[to_id], tell_me_index[id] });
+			tc[tell_me_index[to_id]].push_back({ tell_me_index[from_id], tell_me_index[id] });
 		}
+		else if (tell_me_type[from_id] == "RAFINERY") {
+			rt[tell_me_index[from_id]].push_back({ tell_me_index[to_id], tell_me_index[id] });
+			tr[tell_me_index[to_id]].push_back({ tell_me_index[from_id], tell_me_index[id] });
+		}
+		
 	}
 	ine.close();
 }
