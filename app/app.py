@@ -1,3 +1,5 @@
+import json
+
 import requests
 
 class Sesion_Manager:
@@ -76,6 +78,21 @@ class Sesion_Manager:
             print("Response:", response.text)
 
 
+
+def write_demands_to_file(data):
+    lines = []
+    for sub_dict in data['demand']:
+        line = ""
+        for key, value in sub_dict.items():
+            if key == 'postDay':
+                continue
+            line += str(value) + " "
+        lines.append(line.strip())
+
+    with open('output.txt', 'w') as f:
+        f.write("\n".join(lines))
+
+
 def main():
     sm = Sesion_Manager()
     session_id = sm.start_session()
@@ -89,9 +106,11 @@ def main():
                 "amount": 0
             }
         ]
-        sm.play_round(0, movements)
+        data_json = sm.play_round(0, movements)
+        write_demands_to_file(data_json)
 
     sm.end_session()
+
 
 
 if __name__ == "__main__":
