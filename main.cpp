@@ -87,6 +87,7 @@ int main()
 	vector<tank*> just_tanks;
 	vector<rafinery*> just_rafineries;
 	vector<customer*> just_customers;
+	vector<edge*> edges;
 	vector<edge*> trucks;
 	vector<edge*> pipelines;
 
@@ -181,8 +182,9 @@ int main()
 		edge* e = new edge(id, from_id, to_id, distance, lead_time_days, connection_type, max_capacity);
 		tell_me_index[id] = e->counter-1;
 		tell_me_type[id] = e-> connection_type;
+		edges.push_back(e);
 		if (connection_type == "TRUCK") {
-			trucks.push_back(e);
+			trucks.push_back(e); // index doesn t work for this
 			if (tell_me_type[from_id] == "STORAGE_TANK") {
 				int id1= tell_me_index[from_id];
 				int id2 = tell_me_index[to_id];
@@ -191,7 +193,7 @@ int main()
 			}
 		}
 		else if (connection_type == "PIPELINE") {
-			pipelines.push_back(e);
+			pipelines.push_back(e); // index doesn t work for this
 			if (tell_me_type[from_id] == "RAFINERY") {
 				rt[tell_me_index[from_id]].push_back({ tell_me_index[to_id], tell_me_index[id] });
 				tr[tell_me_index[to_id]].push_back({ tell_me_index[from_id], tell_me_index[id] });
