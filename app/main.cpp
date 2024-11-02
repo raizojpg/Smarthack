@@ -10,7 +10,6 @@ using namespace std;
 unordered_map<string, int> tell_me_index;
 unordered_map<string, string> tell_me_type;
 
-
 class demand {
 public:
 	string id;
@@ -29,7 +28,7 @@ public:
 	string id;
 	string name;
 	string type;
-	node(string id, string name, string type) : id{ id }, name{ name }, type{type} {}
+	node(string id, string name, string type) : id{ id }, name{ name }, type{ type } {}
 };
 
 class tank : public node {
@@ -57,7 +56,7 @@ public:
 	float underflow_penalty;
 	float over_output_penalty;
 	float production_cost;
-	float production_co2; 
+	float production_co2;
 	float initial_stock;
 	rafinery(string id, string name, string type) : node{ id, name, type } { counter++; }
 };
@@ -98,9 +97,9 @@ int edge::counter = 0;
 
 std::vector<edge*> customerEdge; // for end to end
 
-bool vaidatingId(std::vector<edge*> &ExistingEdges, std::string edgeId);
-void sortAuxEdge (std::vector<edge*> &AuxEdge);
-bool bkt(std::vector<edge *> &minCost, std::string crrNodeId);
+bool validatingId(std::vector<edge*>& ExistingEdges, std::string nodeId);
+void sortAuxEdge(std::vector<edge*>& AuxEdge);
+bool bkt(std::vector<edge*>& minCost, std::string crrNodeId);
 
 /// end ionut
 
@@ -121,18 +120,14 @@ vector<vector<pair<int, int>>> tc;
 vector<vector<pair<int, int>>> tt_out;
 vector<vector<pair<int, int>>> tt_in;
 
+vector<pair<string, int>> output;
+vector<pair<string, int>> functie2(int currentDay);
+
+
 void read_customers() {
 	int nr;
 	string id, name;
-
-	FILE *f = fopen("customers.txt", "r");
-	while (f == NULL) {
-        f = fopen("customers.txt", "r");
-    }
 	ifstream inc("customers.txt");
-
-
-
 	while (inc >> id) {
 		inc >> name;
 		inc >> nr;
@@ -269,14 +264,20 @@ void read_demand(int i) {
 	}
 }
 
-void print_demand(int i){
-    string filename = "return_demands/demand" + to_string(i) + ".txt";
+void print_demand(int i) {
+	string filename = "return_demands/demand" + to_string(i) + ".txt";
 	ofstream file(filename);
-	file<<"Hi\n";
+	file << "hi";
+	for (int i = 0; i < output.size(); i++) {
+		file << output[i].first << " "<< output[i].second << "\n";
+	}
 }
+
+std::vector<std::vector<edge*>> minCostAll;
 
 int main()
 {
+
 	read_customers();
 	read_tanks();
 	read_rafineries();
@@ -297,35 +298,35 @@ int main()
 
 	read_connections();
 
+    // ionut - ARBORE MIN
+
+	std::vector<edge*> AuxEdge; // aux for current possible solutions
+
+	for (auto& customer : just_customers) {
+		std::vector<edge*> minCostLoc;
+		bkt(minCostLoc, customer->id);
+		minCostAll.push_back(minCostLoc);
+	}
+
+	// end ionut
 
 	for (int i = 0; i < 5; i++) {
 		read_demand(i);
+		//YOU WRITE ALGO JUST HERE
+
+		output = functie2(i);
+
 		cout << "OTHER DAY\n";
 		print_demand(i);
 
 	}
-
-	/// ionut
-
-	std::vector<std::vector<edge*>> minCostAll;
-
-	std::vector<edge*> AuxEdge; // aux for current possible solutions
-
-	for (auto &customer : just_customers) {
-		std::vector<edge *> minCostLoc;
-		bkt(minCostLoc, customer->id);
-
-	}
-
-	/// end ionut
-
 }
 
 
 /// ionut
 
-bool vaidatingId(std::vector<edge*> &ExistingEdges, std::string nodeId) {
-	for (auto &edge : ExistingEdges) {
+bool validatingId(std::vector<edge*>& ExistingEdges, std::string nodeId) {
+	for (auto& edge : ExistingEdges) {
 		if (edge->to_id == nodeId || edge->from_id == nodeId) {
 			return false;
 		}
@@ -333,10 +334,10 @@ bool vaidatingId(std::vector<edge*> &ExistingEdges, std::string nodeId) {
 	return true;
 }
 
-void sortAuxEdge (std::vector<edge*> &AuxEdge){
-	for (int i = 0; i+1 < AuxEdge.size(); i++) {
+void sortAuxEdge(std::vector<edge*>& AuxEdge) {
+	for (int i = 0; i + 1 < AuxEdge.size(); i++) {
 		edge* aux = AuxEdge[i];
-		for (int j = i+1 ; j < AuxEdge.size(); j++) {
+		for (int j = i + 1; j < AuxEdge.size(); j++) {
 			if (AuxEdge[j]->distance * AuxEdge[j]->max_capacity < aux->distance * AuxEdge[j]->max_capacity) {
 				aux = AuxEdge[j];
 			}
@@ -344,17 +345,17 @@ void sortAuxEdge (std::vector<edge*> &AuxEdge){
 	}
 }
 
-bool bkt(std::vector<edge *> &minCost, std::string crrNodeId){
-	for (auto &refinery : just_rafineries) {
+bool bkt(std::vector<edge*>& minCost, std::string crrNodeId) {
+	for (auto& refinery : just_rafineries) {
 		if (refinery->id == crrNodeId) {
 			return true;
 		}
 	}
 
 	std::vector<edge*> AuxEdge;
-	for (auto &edge : edges) {
+	for (auto& edge : edges) {
 		if (edge->to_id == crrNodeId) {
-			if (vaidatingId(minCost, crrNodeId)) {
+			if (validatingId(minCost, crrNodeId)) {
 				AuxEdge.push_back(edge);
 			}
 		}
@@ -362,13 +363,118 @@ bool bkt(std::vector<edge *> &minCost, std::string crrNodeId){
 
 	sortAuxEdge(AuxEdge);
 
-	for (auto &edge : AuxEdge) {
+	for (auto& edge : AuxEdge) {
 		minCost.push_back(edge);
 		if (bkt(minCost, edge->from_id)) { return true; }
 		minCost.pop_back();
 	}
 
-	for (auto &edge : AuxEdge) {}
+	for (auto& edge : AuxEdge) {}
 }
 
 /// end ionut
+
+
+// andrei
+
+class demand2 {
+public:
+	int index_cust;
+	int cant;
+	int firstDay;
+	int endDay;
+};
+
+class transport {
+public:
+	vector<edge*> path;
+	int ziInit;
+	float cost;
+	int cant;
+};
+
+class movee {
+public:
+	string edge_id;
+	int cant;
+	int zi;
+	movee(string id, int c, int z) {
+		edge_id = id;
+		cant = c;
+		zi = z;
+	}
+};
+
+vector<movee> moves; //
+//vector<vector<edge*>> BP; //(best-paths)
+vector<vector<int>> CAT; // (continut-anticipat-tanks) zile-noduri
+//vector<demand> demands2;
+
+vector<pair<string, int>> functie2(int currentDay) {
+	vector<pair<string, int>> raspuns;
+	//trecem prin demanduri
+	transport min;
+	for (int i = 0; i < demands.size(); i++) {
+		//stabilim un minim standard
+		for (int zi = currentDay; zi < demands[i]->end_delivery_day; zi++) {
+			float dist = 0;
+			float timp = 0;
+			float penalizare = 0;
+			for (int ed = 0; ed < minCostAll[tell_me_index[demands[i]->customer_id]].size(); ed++) {
+				edge TE = *minCostAll[tell_me_index[demands[i]->customer_id]][ed]; //temp-edge
+				dist += TE.distance;
+				timp += TE.lead_time_days;
+				if (ed != minCostAll[tell_me_index[demands[i]->customer_id]].size() - 1) { //verificam daca am ajuns la rafinarie
+					if (CAT[zi][tell_me_index[TE.to_id]] + demands[i]->quantity > just_tanks[tell_me_index[TE.to_id]]->capacity) {
+						penalizare += 1; //tb gasita formula de calcul pt penalizare
+					}
+					if (zi + timp > demands[i]->end_delivery_day) {
+						penalizare += 1;
+					}
+				}
+			}
+			//calculam cost total
+			float cost = dist + timp + penalizare;
+			//actualizam minimul
+			if (i == 0) {
+				min.path = minCostAll[tell_me_index[demands[i]->customer_id]];
+				min.cost = cost;
+				min.ziInit = zi;
+				min.cant = demands[i]->quantity;
+			}
+			else {
+				if (cost < min.cost) {
+					min.path = minCostAll[tell_me_index[demands[i]->customer_id]];
+					min.cost = cost;
+					min.ziInit = zi;
+				}
+			}
+		}
+		//am obtinut minimul
+		//generare mutari
+		int zileMin = 0;
+		for (int i = 0; i < min.path.size(); i++) {
+			edge* TE = min.path[i];
+			CAT[min.ziInit + zileMin][tell_me_index[TE->to_id]] += min.cant;
+			CAT[min.ziInit + zileMin][tell_me_index[TE->from_id]] -= min.cant;
+			moves.push_back(movee(TE->id, min.cant, min.ziInit + zileMin));
+			zileMin += TE->lead_time_days;
+		}
+		//adaugare move-uri la fisier de raspuns
+		//actualizare CAT!!!
+
+
+	}
+	for (int i = 0; i < moves.size(); i++) {
+		if (moves[i].zi == currentDay) {
+			raspuns.push_back(pair<string, int>(moves[i].edge_id, moves[i].cant));
+			for (int j = i; j < moves.size() - 1; j++) {
+				moves[j] = moves[j + 1];
+				moves.pop_back();
+			}
+		}
+	}
+	return raspuns;
+}
+
+// end andrei
