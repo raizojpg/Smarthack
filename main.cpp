@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <iostream>
 #include <vector>
 #include <fstream>
@@ -93,10 +94,20 @@ int rafinery::counter = 0;
 int customer::counter = 0;
 int edge::counter = 0;
 
+/// ionut
+
+std::vector<edge*> customerEdge; // for end to end
+
+bool vaidatingId(std::vector<edge*> &ExistingEdges, std::string edgeId);
+void sortAuxEdge (std::vector<edge*> &AuxEdge);
+bool bkt(std::vector<edge *> &minCost, std::string crrNodeId);
+
+/// end ionut
+
 vector<node*> all_nodes;
 vector<tank*> just_tanks;
-vector<rafinery*> just_rafineries;
 vector<customer*> just_customers;
+vector<rafinery*> just_rafineries;
 vector<edge*> edges;
 vector<edge*> trucks;
 vector<edge*> pipelines;
@@ -219,7 +230,7 @@ void read_connections() {
 			rt[tell_me_index[from_id]].push_back({ tell_me_index[to_id], tell_me_index[id] });
 			tr[tell_me_index[to_id]].push_back({ tell_me_index[from_id], tell_me_index[id] });
 		}
-		
+
 	}
 	ine.close();
 }
@@ -251,12 +262,12 @@ void read_demand(int i) {
 }
 
 int main()
-{	
+{
 
 	read_customers();
 	read_tanks();
 	read_rafineries();
-	
+
 	vector<pair<int, int>> v;
 	for (int i = 0; i < rafinery::counter; i++) {
 		rt.push_back(v);
@@ -270,7 +281,7 @@ int main()
 		tt_out.push_back(v);
 		tt_in.push_back(v);
 	}
-	
+
 	read_connections();
 
 
@@ -280,4 +291,70 @@ int main()
 
 	}
 
+	/// ionut
+
+	std::vector<std::vector<edge*>> minCostAll;
+
+	std::vector<edge*> AuxEdge; // aux for current possible solutions
+
+	for (auto &customer : just_customers) {
+		std::vector<edge *> minCostLoc;
+		bkt(minCostLoc, customer->id);
+
+	}
+
+	/// end ionut
+
 }
+
+
+/// ionut
+
+bool vaidatingId(std::vector<edge*> &ExistingEdges, std::string nodeId) {
+	for (auto &edge : ExistingEdges) {
+		if (edge->to_id == nodeId || edge->from_id == nodeId) {
+			return false;
+		}
+	}
+	return true;
+}
+
+void sortAuxEdge (std::vector<edge*> &AuxEdge){
+	for (int i = 0; i+1 < AuxEdge.size(); i++) {
+		edge* aux = AuxEdge[i];
+		for (int j = i+1 ; j < AuxEdge.size(); j++) {
+			if (AuxEdge[j]->distance * AuxEdge[j]->max_capacity < aux->distance * AuxEdge[j]->max_capacity) {
+				aux = AuxEdge[j];
+			}
+		}
+	}
+}
+
+bool bkt(std::vector<edge *> &minCost, std::string crrNodeId){
+	for (auto &refinery : just_rafineries) {
+		if (refinery->id == crrNodeId) {
+			return true;
+		}
+	}
+
+	std::vector<edge*> AuxEdge;
+	for (auto &edge : edges) {
+		if (edge->to_id == crrNodeId) {
+			if (vaidatingId(minCost, crrNodeId)) {
+				AuxEdge.push_back(edge);
+			}
+		}
+	}
+
+	sortAuxEdge(AuxEdge);
+
+	for (auto &edge : AuxEdge) {
+		minCost.push_back(edge);
+		if (bkt(minCost, edge->from_id)) { return true; }
+		minCost.pop_back();
+	}
+
+	for (auto &edge : AuxEdge) {}
+}
+
+/// end ionut
