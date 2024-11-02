@@ -103,14 +103,12 @@ vector<edge*> pipelines;
 
 vector<demand*> demands;
 
-vector<pair<int, int>> v;
-vector<vector<pair<int, int>>> rt(rafinery::counter, v);
-vector<vector<pair<int, int>>> tr(rafinery::counter, v);
-vector<vector<pair<int, int>>> ct(customer::counter, v);
-vector<vector<pair<int, int>>> tc(customer::counter, v);
-vector<vector<pair<int, int>>> tt_out(tank::counter, v);
-vector<vector<pair<int, int>>> tt_in(tank::counter, v);
-
+vector<vector<pair<int, int>>> rt;
+vector<vector<pair<int, int>>> tr;
+vector<vector<pair<int, int>>> ct;
+vector<vector<pair<int, int>>> tc;
+vector<vector<pair<int, int>>> tt_out;
+vector<vector<pair<int, int>>> tt_in;
 
 void read_customers() {
 	int nr;
@@ -256,13 +254,30 @@ void read_demand(int i) {
 }
 
 int main()
-{
+{	
+
 	read_customers();
 	read_tanks();
 	read_rafineries();
+	
+	vector<pair<int, int>> v;
+	for (int i = 0; i < rafinery::counter; i++) {
+		rt.push_back(v);
+		tr.push_back(v);
+	}
+	for (int i = 0; i < customer::counter; i++) {
+		ct.push_back(v);
+		tc.push_back(v);
+	}
+	for (int i = 0; i < tank::counter; i++) {
+		tt_out.push_back(v);
+		tt_in.push_back(v);
+	}
+	
 	read_connections();
 
-	for (int i = 1; i <= 42; i++) {
+
+	for (int i = 0; i < 42; i++) {
 		read_demand(i);
 		cout << "OTHER DAY\n";
 
