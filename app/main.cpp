@@ -300,7 +300,7 @@ int main()
 
     // ionut - ARBORE MIN
 
-	std::vector<edge*> AuxEdge; // aux for current possible solutions
+	// std::vector<edge*> AuxEdge; // aux for current possible solutions
 
 	for (auto& customer : just_customers) {
 		std::vector<edge*> minCostLoc;
@@ -355,7 +355,7 @@ bool bkt(std::vector<edge*>& minCost, std::string crrNodeId) {
 	std::vector<edge*> AuxEdge;
 	for (auto& edge : edges) {
 		if (edge->to_id == crrNodeId) {
-			if (validatingId(minCost, crrNodeId)) {
+			if (validatingId(minCost, edge->from_id)) {
 				AuxEdge.push_back(edge);
 			}
 		}
@@ -369,7 +369,6 @@ bool bkt(std::vector<edge*>& minCost, std::string crrNodeId) {
 		minCost.pop_back();
 	}
 
-	for (auto& edge : AuxEdge) {}
 }
 
 /// end ionut
