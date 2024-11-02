@@ -225,7 +225,7 @@ void read_connections() {
 }
 
 void read_demand(int i) {
-	string filename = "demand" + to_string(i) + ".txt";
+	string filename = "result_demands/demand" + to_string(i) + ".txt";
 	ifstream file(filename);
 	while (!file.is_open()) {
 		cout << filename << endl;
@@ -248,6 +248,12 @@ void read_demand(int i) {
 		demand* d = new demand(id, customer_id, quantity, post, start, end);
 		demands.push_back(d);
 	}
+}
+
+void print_demand(int i){
+    string filename = "return_demands/demand" + to_string(i) + ".txt";
+	ofstream file(filename);
+	file<<"Hi\n";
 }
 
 int main()
@@ -274,9 +280,10 @@ int main()
 	read_connections();
 
 
-	for (int i = 0; i < 42; i++) {
+	for (int i = 0; i < 5; i++) {
 		read_demand(i);
 		cout << "OTHER DAY\n";
+		print_demand(i);
 
 	}
 
