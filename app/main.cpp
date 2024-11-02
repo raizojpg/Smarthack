@@ -124,7 +124,15 @@ vector<vector<pair<int, int>>> tt_in;
 void read_customers() {
 	int nr;
 	string id, name;
+
+	FILE *f = fopen("customers.txt", "r");
+	while (f == NULL) {
+        f = fopen("customers.txt", "r");
+    }
 	ifstream inc("customers.txt");
+
+
+
 	while (inc >> id) {
 		inc >> name;
 		inc >> nr;
@@ -269,7 +277,6 @@ void print_demand(int i){
 
 int main()
 {
-
 	read_customers();
 	read_tanks();
 	read_rafineries();

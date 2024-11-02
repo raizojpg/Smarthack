@@ -80,7 +80,7 @@ class Sesion_Manager:
             print("Response:", response.text)
 
 
-def write_demands_to_file(data, i=1):
+def write_demands_to_file(data, i=0):
     lines = []
     for sub_dict in data['demand']:
         line = ""
@@ -92,6 +92,20 @@ def write_demands_to_file(data, i=1):
 
     with open('result_demands/demand' + str(i) + '.txt', 'w') as f:
         f.write("\n".join(lines))
+
+
+def file_to_json(file_path, i=0):
+    demand = []
+    result = {'result' : i}
+    keys = ['customerId', 'amount', 'postDay', 'startDay', 'endDay']
+    file = open(file_path, 'r')
+    for line in file.readlines():
+        values = line.split()
+        data = dict(zip(keys, values))
+        demand.append(data)
+    result['demand'] = demand
+    return result
+
 
 
 def calculate_movement(sm, day):
@@ -122,6 +136,7 @@ def main():
 
             data_json = sm.play_round(i, movements)
             write_demands_to_file(data_json, i)
+            # file_to_json('result_demands/demand' + str(i) + '.txt', i)
 
     sm.end_session()
 
