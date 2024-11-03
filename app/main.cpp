@@ -1,17 +1,20 @@
-#include <algorithm>
 #include <iostream>
 #include <vector>
 #include <fstream>
 #include <string>
 #include <unordered_map>
+#include <random>
+#include <windows.h>
 
 using namespace std;
 
 unordered_map<string, int> tell_me_index;
 unordered_map<string, string> tell_me_type;
 
+
 class demand {
 public:
+	static int id_nr;
 	string id;
 	string customer_id;
 	int quantity;
@@ -19,8 +22,10 @@ public:
 	int start_delivery_day;
 	int end_delivery_day;
 	demand(string id, string customer_id, int quantity, int post, int start, int end) :
-		id{ id }, customer_id{ customer_id }, quantity{ quantity }, post_day{ post },
-		start_delivery_day{ start }, end_delivery_day{ end } {}
+		id{ to_string(id_nr) }, customer_id{ customer_id }, quantity{ quantity }, post_day{ post },
+		start_delivery_day{ start }, end_delivery_day{ end } {
+		id_nr++;
+	}
 };
 
 class node {
@@ -28,12 +33,13 @@ public:
 	string id;
 	string name;
 	string type;
-	node(string id, string name, string type) : id{ id }, name{ name }, type{ type } {}
+	node(string id, string name, string type) : id{ id }, name{ name }, type{type} {}
 };
 
 class tank : public node {
 public:
 	static int counter;
+	int daily[42];
 	int capacity;
 	int max_input;
 	int max_output;
@@ -64,6 +70,7 @@ public:
 class customer : public node {
 public:
 	static int counter;
+	int daily[42];
 	int max_input;
 	float over_input_penalty;
 	float late_delivery_penalty;
@@ -92,21 +99,12 @@ int tank::counter = 0;
 int rafinery::counter = 0;
 int customer::counter = 0;
 int edge::counter = 0;
-
-/// ionut
-
-std::vector<edge*> customerEdge; // for end to end
-
-bool validatingId(std::vector<edge*>& ExistingEdges, std::string nodeId);
-void sortAuxEdge(std::vector<edge*>& AuxEdge);
-bool bkt(std::vector<edge*>& minCost, std::string crrNodeId);
-
-/// end ionut
+int demand::id_nr = 0;
 
 vector<node*> all_nodes;
 vector<tank*> just_tanks;
-vector<customer*> just_customers;
 vector<rafinery*> just_rafineries;
+vector<customer*> just_customers;
 vector<edge*> edges;
 vector<edge*> trucks;
 vector<edge*> pipelines;
@@ -120,8 +118,7 @@ vector<vector<pair<int, int>>> tc;
 vector<vector<pair<int, int>>> tt_out;
 vector<vector<pair<int, int>>> tt_in;
 
-vector<pair<string, int>> output;
-vector<pair<string, int>> functie2(int currentDay);
+vector<demand*> demands_for_the_day[42];
 
 
 void read_customers() {
@@ -239,41 +236,92 @@ void read_connections() {
 }
 
 void read_demand(int i) {
-	string filename = "result_demands/demand" + to_string(i) + ".txt";
-	ifstream file(filename);
-	while (!file.is_open()) {
-		cout << filename << endl;
-		cout << "DOESN T EXIST" << endl;
+	const string filename = "give_demands/demand" + to_string(i) + ".txt";
+	while (true) {
+		std::ifstream file(filename);
+		if (file.good()) {
 
-	}
-	demands.clear();
-	string id;
-	string customer_id;
-	int quantity;
-	int post;
-	int start;
-	int end;
-	while (file >> id) {
-		file >> customer_id;
-		file >> quantity;
-		file >> post;
-		file >> start;
-		file >> end;
-		demand* d = new demand(id, customer_id, quantity, post, start, end);
-		demands.push_back(d);
+			demands.clear();
+			string id;
+			string customer_id;
+			int quantity;
+			int post;
+			int start;
+			int end;
+			while (file >> customer_id) {
+				file >> quantity;
+				file >> post;
+				file >> start;
+				file >> end;
+				demand* d = new demand(id, customer_id, quantity, post, start, end);
+				demands_for_the_day[start + (end - start) / 2].push_back(d);
+				//demands.push_back(d);
+			}
+
+			break;
+		}
+		else {
+			cout << filename << endl;
+		}
+		file.close();
+		Sleep(500);
 	}
 }
 
-void print_demand(int i) {
+void print_demand(int i, vector<pair<string, int>>& result) {
 	string filename = "return_demands/demand" + to_string(i) + ".txt";
 	ofstream file(filename);
-	file << "hi";
-	for (int i = 0; i < output.size(); i++) {
-		file << output[i].first << " "<< output[i].second << "\n";
+	for (auto& val : result) {
+		file << val.first<< " "<<val.second<<"\n";
 	}
+	file.close();
 }
 
-std::vector<std::vector<edge*>> minCostAll;
+void daily_updates(int day) {
+	float penalties = 0;
+	for (auto& raf : just_rafineries) {
+		raf->capacity += raf->production;
+		penalties += raf->production_co2 + raf->production_cost;
+		if (raf->capacity > raf->max_output) {
+			penalties += raf->overflow_penalty;
+		}
+	}
+	for (auto& tank : just_tanks) {
+		tank->capacity += tank->daily[day];
+		if (tank->capacity > tank->max_input) {
+			penalties += tank->overflow_penalty;
+		}
+	}
+
+
+
+}
+
+
+vector<pair<string,int>> solve(vector<demand*> demands_in_the_day) {
+	std::random_device rd;
+	std::mt19937 gen(rd());
+	vector<pair<string, int>> result;
+
+	for (auto& demand : demands_in_the_day) {
+		std::uniform_int_distribution<> distrib(0, tc[tell_me_index[demand->customer_id]].size() - 1);
+		pair<int, int> p = tc[tell_me_index[demand->customer_id]][distrib(gen)];
+		string random_edge = edges[p.second]->id;
+		result.push_back({ random_edge, demand->quantity });
+
+		if (just_tanks[p.first]->capacity <= 0) {
+
+			/*std::uniform_int_distribution<> distrib(0, tr[p.first].size() - 1);
+			pair<int, int> p = tc[tell_me_index[demand->customer_id]][distrib(gen)];
+			string random_edge = edges[p.second]->id;
+			result.push_back({ random_edge, demand->quantity });*/
+
+
+		}
+	}
+	return result;
+}
+
 
 int main()
 {
@@ -298,182 +346,12 @@ int main()
 
 	read_connections();
 
-    // ionut - ARBORE MIN
 
-	// std::vector<edge*> AuxEdge; // aux for current possible solutions
-
-	for (auto& customer : just_customers) {
-		std::vector<edge*> minCostLoc;
-		bkt(minCostLoc, customer->id);
-		minCostAll.push_back(minCostLoc);
-	}
-
-	// end ionut
-
-	for (int i = 0; i < 5; i++) {
+	for (int i = 0; i < 42; i++) {
 		read_demand(i);
-		//YOU WRITE ALGO JUST HERE
-
-		output = functie2(i);
-
 		cout << "OTHER DAY\n";
-		print_demand(i);
-
-	}
-}
-
-
-/// ionut
-
-bool validatingId(std::vector<edge*>& ExistingEdges, std::string nodeId) {
-	for (auto& edge : ExistingEdges) {
-		if (edge->to_id == nodeId || edge->from_id == nodeId) {
-			return false;
-		}
-	}
-	return true;
-}
-
-void sortAuxEdge(std::vector<edge*>& AuxEdge) {
-	for (int i = 0; i + 1 < AuxEdge.size(); i++) {
-		edge* aux = AuxEdge[i];
-		for (int j = i + 1; j < AuxEdge.size(); j++) {
-			if (AuxEdge[j]->distance * AuxEdge[j]->max_capacity < aux->distance * AuxEdge[j]->max_capacity) {
-				aux = AuxEdge[j];
-			}
-		}
-	}
-}
-
-bool bkt(std::vector<edge*>& minCost, std::string crrNodeId) {
-	for (auto& refinery : just_rafineries) {
-		if (refinery->id == crrNodeId) {
-			return true;
-		}
-	}
-
-	std::vector<edge*> AuxEdge;
-	for (auto& edge : edges) {
-		if (edge->to_id == crrNodeId) {
-			if (validatingId(minCost, edge->from_id)) {
-				AuxEdge.push_back(edge);
-			}
-		}
-	}
-
-	sortAuxEdge(AuxEdge);
-
-	for (auto& edge : AuxEdge) {
-		minCost.push_back(edge);
-		if (bkt(minCost, edge->from_id)) { return true; }
-		minCost.pop_back();
+		vector<pair<string, int>> results = solve(demands_for_the_day[i]);
+		print_demand(i,results);
 	}
 
 }
-
-/// end ionut
-
-
-// andrei
-
-class demand2 {
-public:
-	int index_cust;
-	int cant;
-	int firstDay;
-	int endDay;
-};
-
-class transport {
-public:
-	vector<edge*> path;
-	int ziInit;
-	float cost;
-	int cant;
-};
-
-class movee {
-public:
-	string edge_id;
-	int cant;
-	int zi;
-	movee(string id, int c, int z) {
-		edge_id = id;
-		cant = c;
-		zi = z;
-	}
-};
-
-vector<movee> moves; //
-//vector<vector<edge*>> BP; //(best-paths)
-vector<vector<int>> CAT; // (continut-anticipat-tanks) zile-noduri
-//vector<demand> demands2;
-
-vector<pair<string, int>> functie2(int currentDay) {
-	vector<pair<string, int>> raspuns;
-	//trecem prin demanduri
-	transport min;
-	for (int i = 0; i < demands.size(); i++) {
-		//stabilim un minim standard
-		for (int zi = currentDay; zi < demands[i]->end_delivery_day; zi++) {
-			float dist = 0;
-			float timp = 0;
-			float penalizare = 0;
-			for (int ed = 0; ed < minCostAll[tell_me_index[demands[i]->customer_id]].size(); ed++) {
-				edge TE = *minCostAll[tell_me_index[demands[i]->customer_id]][ed]; //temp-edge
-				dist += TE.distance;
-				timp += TE.lead_time_days;
-				if (ed != minCostAll[tell_me_index[demands[i]->customer_id]].size() - 1) { //verificam daca am ajuns la rafinarie
-					if (CAT[zi][tell_me_index[TE.to_id]] + demands[i]->quantity > just_tanks[tell_me_index[TE.to_id]]->capacity) {
-						penalizare += 1; //tb gasita formula de calcul pt penalizare
-					}
-					if (zi + timp > demands[i]->end_delivery_day) {
-						penalizare += 1;
-					}
-				}
-			}
-			//calculam cost total
-			float cost = dist + timp + penalizare;
-			//actualizam minimul
-			if (i == 0) {
-				min.path = minCostAll[tell_me_index[demands[i]->customer_id]];
-				min.cost = cost;
-				min.ziInit = zi;
-				min.cant = demands[i]->quantity;
-			}
-			else {
-				if (cost < min.cost) {
-					min.path = minCostAll[tell_me_index[demands[i]->customer_id]];
-					min.cost = cost;
-					min.ziInit = zi;
-				}
-			}
-		}
-		//am obtinut minimul
-		//generare mutari
-		int zileMin = 0;
-		for (int i = 0; i < min.path.size(); i++) {
-			edge* TE = min.path[i];
-			CAT[min.ziInit + zileMin][tell_me_index[TE->to_id]] += min.cant;
-			CAT[min.ziInit + zileMin][tell_me_index[TE->from_id]] -= min.cant;
-			moves.push_back(movee(TE->id, min.cant, min.ziInit + zileMin));
-			zileMin += TE->lead_time_days;
-		}
-		//adaugare move-uri la fisier de raspuns
-		//actualizare CAT!!!
-
-
-	}
-	for (int i = 0; i < moves.size(); i++) {
-		if (moves[i].zi == currentDay) {
-			raspuns.push_back(pair<string, int>(moves[i].edge_id, moves[i].cant));
-			for (int j = i; j < moves.size() - 1; j++) {
-				moves[j] = moves[j + 1];
-				moves.pop_back();
-			}
-		}
-	}
-	return raspuns;
-}
-
-// end andrei

@@ -110,31 +110,59 @@ def file_to_json(file_path, i=0):
     return result
 
 
+# def calculate_movement(day):
+#     if day == 0:
+#
+#         return []
+#
+#     movements = []
+#
+#     file = open('return_demands/demand' + str(day) + '.txt', 'r')
+#
+#     # while not file:
+#     #     time.sleep(1)
+#     #     file = open('return_demands/demand' + str(day) + '.txt', 'r')
+#
+#     for line in file.readlines():
+#         values = line.split()
+#         dic = {"connectionId": values[0], "amount": int(values[1])}
+#         movements.append(dic)
+#
+#     # movements = [
+#     #     {
+#     #         "connectionId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+#     #         "amount": 0
+#     #     }
+#     # ]
+#     return movements
+
 def calculate_movement(day):
     # if day == 0:
-    #
     #     return []
 
     movements = []
+    file_path = 'return_demands/demand' + str(day) + '.txt'
 
-    file = open('return_demands/demand' + str(day) + '.txt', 'r')
+    while True:
+        if os.path.isfile(file_path):
+            with open(file_path, 'r') as file:
+                for line in file.readlines():
+                    values = line.split()
+                    dic = {"connectionId": values[0], "amount": int(values[1])}
+                    movements.append(dic)
+            break
+        else:
+            print(day)
+            time.sleep(0.5)
 
-    while not file:
-        time.sleep(1)
-        file = open('return_demands/demand' + str(day) + '.txt', 'r')
+    # with open(file_path, 'r') as file:
+    #     for line in file.readlines():
+    #         values = line.split()
+    #         dic = {"connectionId": values[0], "amount": int(values[1])}
+    #         movements.append(dic)
 
-    for line in file.readlines():
-        values = line.split()
-        dic = {"connectionId": values[0], "amount": int(values[1])}
-        movements.append(dic)
-
-    # movements = [
-    #     {
-    #         "connectionId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-    #         "amount": 0
-    #     }
-    # ]
     return movements
+
 
 def main_cpp():
     os.startfile('maincpp.exe')
@@ -164,20 +192,22 @@ def main():
     sm = Sesion_Manager()
     session_id = sm.start_session()
     print(session_id)
+    movements = []
 
     if session_id:
         for i in range(0, 42):
-            # movements = calculate_movement(i)
-            movements = [
-                {
-                    "connectionId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-                    "amount": 0
-                }
-            ]
-            # movements = generate_random_json_body(i, 1)
-
             data_json = sm.play_round(i, movements)
             write_demands_to_file(data_json, i)
+            movements = calculate_movement(i)
+            # movements = [
+            #     {
+            #         "connectionId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            #         "amount": 0
+            #     }
+            # ]
+            # movements = generate_random_json_body(i, 1)
+
+
             # file_to_json('give_demands/demand' + str(i) + '.txt', i)
 
     sm.end_session()
