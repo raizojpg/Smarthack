@@ -83,7 +83,7 @@ class Sesion_Manager:
             print("Response:", response.text)
 
 
-def write_demands_to_file(data, i=1):
+def write_demands_to_file(data, i=0):
     lines = []
     for sub_dict in data['demand']:
         line = ""
@@ -104,16 +104,20 @@ def calculate_movement(sm, day):
     movements = []
 
     print('give_demands/demand' + str(day) + '.txt')
-    file = open('give_demands/demand' + str(day) + '.txt', 'r')
-    #
-    while not file:
-        time.sleep(1)
-        file = open('give_demands/demand' + str(day) + '.txt', 'r')
-    #
-    for line in file.readlines():
-        values = line.split()
-        dic = {"connectionId": values[0], "amount": int(values[1])}
-        movements.append(dic)
+    filename = 'give_demands/demand' + str(day) + '.txt';
+
+    while True:
+        if os.path.isfile(filename):
+            with open(filename, 'r') as file:
+                for line in file.readlines():
+                    values = line.split()
+                    dic = {"connectionId": values[0], "amount": int(values[1])}
+                    movements.append(dic)
+            break
+        else:
+            print(day)
+            time.sleep(0.5)
+
 
     # movements = [
     #     {
@@ -133,13 +137,13 @@ def main():
     sm = Sesion_Manager()
     session_id = sm.start_session()
     print(session_id)
+    movements = []
 
     if session_id:
         for i in range(0, 42):
-            movements = calculate_movement(sm, i)
-
             data_json = sm.play_round(i, movements)
             write_demands_to_file(data_json, i)
+            movements = calculate_movement(sm, i)
 
     sm.end_session()
 
