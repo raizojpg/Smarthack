@@ -378,12 +378,12 @@ bool validatingId(std::vector<edge*>& ExistingEdges, std::string nodeId) {
 
 void sortAuxEdge(std::vector<edge*>& AuxEdge) {
 	for (int i = 0; i + 1 < AuxEdge.size(); i++) {
-		edge* aux = AuxEdge[i];
 		for (int j = i + 1; j < AuxEdge.size(); j++) {
 			// cout << j << " ";
-			if (AuxEdge[j]->distance * AuxEdge[j]->max_capacity * AuxEdge[j]->lead_time_days < aux->distance * AuxEdge[j]->max_capacity * AuxEdge[j]->lead_time_days) {
-				aux = AuxEdge[j];
-				// cout << j;
+			if (AuxEdge[j]->distance / AuxEdge[j]->max_capacity > AuxEdge[i]->distance / AuxEdge[j]->max_capacity ) {
+				auto aux = AuxEdge[j];
+				AuxEdge[j] = AuxEdge[i];
+				AuxEdge[i] = aux;
 			}
 			// cout << endl;
 		}
