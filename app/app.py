@@ -83,7 +83,7 @@ class Sesion_Manager:
             print("Response:", response.text)
 
 
-def write_demands_to_file(data, i=0):
+def write_demands_to_file(data, i=1):
     lines = []
     for sub_dict in data['demand']:
         line = ""
@@ -93,36 +93,23 @@ def write_demands_to_file(data, i=0):
             line += str(value) + " "
         lines.append(line.strip())
 
-    with open('give_demands/demand' + str(i) + '.txt', 'w') as f:
+    with open('result_demands/demand' + str(i) + '.txt', 'w') as f:
         f.write("\n".join(lines))
 
 
-def file_to_json(file_path, i=0):
-    demand = []
-    result = {'result' : i}
-    keys = ['customerId', 'amount', 'postDay', 'startDay', 'endDay']
-    file = open(file_path, 'r')
-    for line in file.readlines():
-        values = line.split()
-        data = dict(zip(keys, values))
-        demand.append(data)
-    result['demand'] = demand
-    return result
-
-
-def calculate_movement(day):
-    # if day == 0:
-    #
-    #     return []
+def calculate_movement(sm, day):
+    if day == 0:
+        return []
 
     movements = []
 
-    file = open('return_demands/demand' + str(day) + '.txt', 'r')
-
+    print('give_demands/demand' + str(day) + '.txt')
+    file = open('give_demands/demand' + str(day) + '.txt', 'r')
+    #
     while not file:
         time.sleep(1)
-        file = open('return_demands/demand' + str(day) + '.txt', 'r')
-
+        file = open('give_demands/demand' + str(day) + '.txt', 'r')
+    #
     for line in file.readlines():
         values = line.split()
         dic = {"connectionId": values[0], "amount": int(values[1])}
@@ -137,27 +124,9 @@ def calculate_movement(day):
     return movements
 
 def main_cpp():
-    os.startfile('maincpp.exe')
+    os.startfile('main')
 
-def generate_random_json_body(i, num_movements=1):
 
-    if i == 0:
-        return []
-    day = i
-    movements = []
-    for _ in range(num_movements):
-        movement = {
-            "connectionId": str(uuid.uuid4()),  # Generate a random UUID
-            "amount": random() * 1000
-        }
-        movements.append(movement)
-
-    random_json_body = {
-        "day": day,
-        "movements": movements
-    }
-
-    return json.dumps(random_json_body, indent=2)
 
 
 def main():
@@ -167,18 +136,10 @@ def main():
 
     if session_id:
         for i in range(0, 42):
-            # movements = calculate_movement(i)
-            movements = [
-                {
-                    "connectionId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-                    "amount": 0
-                }
-            ]
-            # movements = generate_random_json_body(i, 1)
+            movements = calculate_movement(sm, i)
 
             data_json = sm.play_round(i, movements)
             write_demands_to_file(data_json, i)
-            # file_to_json('give_demands/demand' + str(i) + '.txt', i)
 
     sm.end_session()
 
