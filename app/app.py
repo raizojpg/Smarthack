@@ -3,6 +3,8 @@ import os
 import threading
 import uuid
 from random import random
+import subprocess
+import xdg
 
 import requests
 import time
@@ -82,7 +84,6 @@ class Sesion_Manager:
             print(f"Failed to end session. Status Code: {response.status_code}")
             print("Response:", response.text)
 
-
 def write_demands_to_file(data, i=1):
     lines = []
     for sub_dict in data['demand']:
@@ -96,7 +97,6 @@ def write_demands_to_file(data, i=1):
     with open('result_demands/demand' + str(i) + '.txt', 'w') as f:
         f.write("\n".join(lines))
 
-
 def calculate_movement(sm, day):
     if day == 0:
         return []
@@ -104,45 +104,38 @@ def calculate_movement(sm, day):
     movements = []
 
     print('give_demands/demand' + str(day) + '.txt')
-    file = open('give_demands/demand' + str(day) + '.txt', 'r')
-    #
-    while not file:
-        time.sleep(1)
-        file = open('give_demands/demand' + str(day) + '.txt', 'r')
-    #
-    for line in file.readlines():
-        values = line.split()
-        dic = {"connectionId": values[0], "amount": int(values[1])}
-        movements.append(dic)
+    filename = 'give_demands/demand' + str(day) + '.txt';
 
-    # movements = [
-    #     {
-    #         "connectionId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-    #         "amount": 0
-    #     }
-    # ]
+    while True:
+        if os.path.isfile(filename):
+            with open(filename, 'r') as file:
+                for line in file.readlines():
+                    values = line.split()
+                    dic = {"connectionId": values[0], "amount": int(values[1])}
+                    movements.append(dic)
+            break
+        else:
+            print(day)
+            time.sleep(0.5)
+
     return movements
 
 def main_cpp():
-    os.startfile('main')
-
-
-
+    subprocess.run(['./main'], capture_output=True, text=True)
 
 def main():
     sm = Sesion_Manager()
     session_id = sm.start_session()
     print(session_id)
 
+    movements = []
     if session_id:
         for i in range(0, 42):
-            movements = calculate_movement(sm, i)
-
             data_json = sm.play_round(i, movements)
             write_demands_to_file(data_json, i)
+            movements = calculate_movement(sm, i)
 
     sm.end_session()
-
 
 if __name__ == "__main__":
 

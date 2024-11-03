@@ -2,8 +2,13 @@
 #include <iostream>
 #include <vector>
 #include <fstream>
+#include <map>
+#include <memory>
 #include <string>
 #include <unordered_map>
+#include <random>
+#include <thread>
+#include <filesystem>
 
 using namespace std;
 
@@ -173,6 +178,18 @@ void read_tanks() {
 	ins.close();
 }
 
+void demand_sort() {
+	for (int i = 0; i < demands.size()-1; i++) {
+		for (int j = i+1; j < demands.size(); j++) {
+			if (demands[i]->end_delivery_day > demands[j]->end_delivery_day) {
+				auto aux = demands[i];
+				demands[i] = demands[j];
+				demands[j] = aux;
+			}
+		}
+	}
+}
+
 void read_rafineries() {
 	string id;
 	string name;
@@ -240,28 +257,34 @@ void read_connections() {
 
 void read_demand(int i) {
 	string filename = "result_demands/demand" + to_string(i) + ".txt";
-	ifstream file(filename);
-	while (!file.is_open()) {
-		cout << filename << endl;
-		cout << "DOESN T EXIST" << endl;
-
+	while (true) {
+		ifstream file(filename);
+		if(filesystem::exists(filename)) {
+			//demands.clear();
+			string id;
+			string customer_id;
+			int quantity;
+			int post;
+			int start;
+			int end;
+			while (file >> id) {
+				customer_id = id;
+				file >> quantity;
+				file >> post;
+				file >> start;
+				file >> end;
+				demand* d = new demand(id, customer_id, quantity, post, start, end);
+				demands.push_back(d);
+			}
+			break;
+		}
+		else {
+			cout<<filename<<" does not exist"<<endl;
+		}
+		file.close();
+		this_thread::sleep_for(chrono::seconds(1));
 	}
-	// demands.clear();
-	string id;
-	string customer_id;
-	int quantity;
-	int post;
-	int start;
-	int end;
-	while (file >> id) {
-		customer_id = id;
-		file >> quantity;
-		file >> post;
-		file >> start;
-		file >> end;
-		demand* d = new demand(id, customer_id, quantity, post, start, end);
-		demands.push_back(d);
-	}
+	demand_sort();
 }
 
 void print_demand(int i) {
