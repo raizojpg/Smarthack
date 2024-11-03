@@ -4,7 +4,7 @@ import threading
 import uuid
 from random import random
 import subprocess
-import xdg
+import csv
 
 import requests
 import time
@@ -84,6 +84,17 @@ class Sesion_Manager:
             print(f"Failed to end session. Status Code: {response.status_code}")
             print("Response:", response.text)
 
+def csv_to_txt(csv_file_path, txt_file_path, delimiter=';'):
+    with open(csv_file_path, 'r', newline='', encoding='utf-8') as csv_file:
+        reader = csv.reader(csv_file, delimiter=delimiter)
+        with open(txt_file_path, 'w', encoding='utf-8') as txt_file:
+            i = 0
+            for row in reader:
+                if i == 0:
+                    i+=1
+                else:
+                    txt_file.write(' '.join(row) + '\n')
+
 def write_demands_to_file(data, i=1):
     lines = []
     for sub_dict in data['demand']:
@@ -138,6 +149,11 @@ def main():
     sm.end_session()
 
 if __name__ == "__main__":
+
+    csv_to_txt('customers.csv', 'customers.txt')
+    csv_to_txt('refineries.csv', 'rafineries.txt')
+    csv_to_txt('tanks.csv', 'tanks.txt')
+    csv_to_txt('connections.csv','connections.txt')
 
     thread = threading.Thread(target = main_cpp)
     thread.start()

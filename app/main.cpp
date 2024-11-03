@@ -98,15 +98,11 @@ int rafinery::counter = 0;
 int customer::counter = 0;
 int edge::counter = 0;
 
-/// ionut
-
 std::vector<edge*> customerEdge; // for end to end
 
 bool validatingId(std::vector<edge*>& ExistingEdges, std::string nodeId);
 void sortAuxEdge(std::vector<edge*>& AuxEdge);
 bool bkt(std::vector<edge*>& minCost, std::string crrNodeId);
-
-/// end ionut
 
 vector<node*> all_nodes;
 vector<tank*> just_tanks;
@@ -126,7 +122,7 @@ vector<vector<pair<int, int>>> tt_out;
 vector<vector<pair<int, int>>> tt_in;
 
 vector<pair<string, int>> output;
-vector<pair<string, int>> functie2(int currentDay);
+vector<pair<string, int>> solve(int currentDay);
 
 
 void read_customers() {
@@ -292,54 +288,45 @@ void print_demand(int i) {
 	string filename = "give_demands/demand" + to_string(i) + ".txt";
 	ofstream file(filename);
 
-	// for (auto& d : demands) {
-		// cout << d->start_delivery_day << endl;
-	// }
-
 	// file << "hi";
 	for (int i = 0; i < output.size(); i++) {
 		file << output[i].first << " "<< output[i].second << "\n";
 	}
 }
 
-void printAll() {
-	int i;
-
-	// // customers
-	// i = 0;
-	// cout << "customers\n";
-	// for (auto& customer : just_rafineries) {
-	// 	cout << i++ << " " << customer->id  << "\n";
-	// }
-	//
-	// // tanks
-	// i = 0;
-	// cout << "tanks\n";
-	// for (auto& tank : just_tanks) {
-	// 	cout << i++ << " " << tank->id  << "\n";
-	// }
-	//
-	// // rafineries
-	// i = 0;
-	// cout << "rafineries\n";
-	// for (auto& rafiner : just_rafineries) {
-	// 	cout << i++ << " " << rafiner->id  << "\n";
-	// }
-
-	// demands
-	// i = 0;
-	// cout << "demands\n";
-	// for (auto& demand : demands) {
-	// 	cout << i++ << " " << demand->id << " " << demand->quantity << "\n";
-	// }
-}
-
-
 std::vector<std::vector<edge*>> minCostAll;
+
+vector<string> visitedNodeIds;
+vector<edge*> finalRoute;
+int getCost(string refId);
+long long myAlg(string nodeId);
+
+vector<pair<string, int>> fillFirst(int currentDay) {
+	vector<pair<string, int>> raspuns;
+
+	for(int i = 0; i < minCostAll.size(); i++) {
+		auto v_edge = minCostAll[i];
+		auto lastEdge = v_edge[v_edge.size()-1];
+		for (auto& tank : just_tanks) {
+			if (tank->id == lastEdge->to_id) {
+				int min = tank->max_input;
+				if (tank->capacity - tank->initial_stock > 0) {
+					if (min > lastEdge->max_capacity) {
+						min = lastEdge->max_capacity;
+					}
+					tank->initial_stock += min;
+					raspuns.push_back(std::pair<string,int>(lastEdge->id, min));
+				}
+				break;
+			}
+		}
+	}
+
+	return raspuns;
+}
 
 int main()
 {
-
 	read_customers();
 	read_tanks();
 	read_rafineries();
@@ -360,35 +347,27 @@ int main()
 
 	read_connections();
 
-    // ionut - ARBORE MIN
-
-	// std::vector<edge*> AuxEdge; // aux for current possible solutions
-
 	for (auto& customer : just_customers) {
 		std::vector<edge*> minCostLoc;
 		bkt(minCostLoc, customer->id);
 		minCostAll.push_back(minCostLoc);
+		// myAlg(customer->id);
+		// minCostAll.push_back(finalRoute);
 	}
 
-	// end ionut
 
 	for (int i = 0; i < 42; i++) {
 		read_demand(i);
 		//YOU WRITE ALGO JUST HERE
-
-		output = functie2(i);
+		output = solve(i);
 
 		cout << "OTHER DAY\n";
 		print_demand(i);
 
 	}
 
-	// for printing what we read
-	printAll();
+
 }
-
-
-/// ionut
 
 bool validatingId(std::vector<edge*>& ExistingEdges, std::string nodeId) {
 	for (auto& edge : ExistingEdges) {
@@ -439,11 +418,6 @@ bool bkt(std::vector<edge*>& minCost, std::string crrNodeId) {
 
 }
 
-/// end ionut
-
-
-// andrei
-
 class demand2 {
 public:
 	int index_cust;
@@ -477,7 +451,7 @@ vector<movee> moves; //
 vector<vector<int>> CAT; // (continut-anticipat-tanks) zile-noduri
 //vector<demand> demands2;
 
-vector<pair<string, int>> functie2(int currentDay) {
+vector<pair<string, int>> solve(int currentDay) {
 	vector<pair<string, int>> raspuns;
 	for (int i = 0; i < demands.size(); i++) {
 		auto demand = demands[i];
@@ -493,4 +467,48 @@ vector<pair<string, int>> functie2(int currentDay) {
 	return raspuns;
 }
 
-// end andrei
+// minim global
+
+int getCost(string refId) {
+	for (auto& ref : just_rafineries) {
+		if (ref->id == refId) {
+			return (ref->production_cost + ref->production_co2 + ref->overflow_penalty + ref->underflow_penalty
+				- ref->capacity - ref->max_output - ref->initial_stock);
+		}
+	}
+}
+
+long long myAlg(string nodeId) {
+	for (auto& nod : visitedNodeIds) {
+		if (nod == nodeId) {
+			return INT32_MAX;
+		}
+	}
+
+	visitedNodeIds.push_back(nodeId);
+
+	if(tell_me_type[nodeId] == "REFINERY") {
+		return getCost(nodeId) ;
+	}
+
+	unordered_map<long long, edge*> costs;
+	int minCost;
+
+	for (auto& edge : edges) {
+		if (edge->to_id == nodeId) {
+			int c = myAlg(edge->from_id);
+
+			costs.insert(make_pair(c + edge->distance, edge));
+
+			minCost = c + edge->distance + edge->max_capacity;
+		}
+	}
+
+	for(auto& [cost, edge] : costs) {
+		if (cost < minCost) { minCost = cost; }
+	}
+
+	finalRoute.push_back(costs[minCost]);
+
+	return minCost;
+}
